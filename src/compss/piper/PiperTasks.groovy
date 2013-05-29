@@ -14,7 +14,7 @@ class PiperTasks {
         File db_folder = new File("$targetPath.absoluteFile/$strategy-db")
         if(!db_folder.exists()){
             db_folder.mkdir()
-            """./x-format.sh $strategy $genomeFile $db_folder""".execute()
+            """./bin/x-format.sh $strategy $genomeFile $db_folder""".execute()
         }
     }
 
@@ -25,11 +25,16 @@ class PiperTasks {
         if(!chr_folder.exists()){
            chr_folder.mkdir()
 
-            """csplit $genomeFile '%^>%' '/^>/' '{*}' -f seq_ -n 5
-                for x in seq_*; do
-                SEQID="grep -E "^>" \$x | sed s/^>\\(\\S*\\).*/\\1/ | sed  s/[\\>\\<\\/\\''\\:\\\\]/_/"
-                mv \$x $chr_folder/\$SEQID;
-                done """.execute()
+            "csplit $genomeFile %^>%  /^>/ {*} -f seq_ -n 5".execute().waitFor()
+
+            new File("." ).eachFile{ file ->
+                if(file =~ /seq_*/){
+                    String line
+                    file.withReader { line = it.readLine().substring(1) }
+                    file.renameTo("./$line")
+                    "mv $line $chr_folder/$line".execute().waitFor()
+                }
+            }
         }
 
     }
