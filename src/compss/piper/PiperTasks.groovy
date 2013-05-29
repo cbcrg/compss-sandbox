@@ -9,23 +9,21 @@ package compss.piper
  */
 class PiperTasks {
 
-    static void createBlastDatabase( String strategy, File genomeFile, File targetPath ) {
+    static void createBlastDatabase( String strategy, File genomeFile, File db_folder ) {
 
-        File db_folder = new File("$targetPath.absoluteFile/$strategy-db")
         if(!db_folder.exists()){
             db_folder.mkdir()
-            """./bin/x-format.sh $strategy $genomeFile $db_folder""".execute()
+            "./bin/x-format.sh $strategy $genomeFile $db_folder".execute().waitFor()
         }
     }
 
 
-    static void createChrDatabase( File genomeFile, File targetPath ) {
-       //Hacer la diferenciacion entre Mac y Linux
-        File chr_folder = new File("$targetPath.absoluteFile/chr")
-        if(!chr_folder.exists()){
-           chr_folder.mkdir()
+    static void createChrDatabase( File genomeFile, File chr_folder ) {
+        def split = (System.properties['os.name'] == 'Mac OS X' ? 'gcsplit' : 'csplit')
 
-            "csplit $genomeFile %^>%  /^>/ {*} -f seq_ -n 5".execute().waitFor()
+        if(!chr_folder.exists()){
+            chr_folder.mkdir()
+            "$split $genomeFile %^>%  /^>/ {*} -f seq_ -n 5".execute().waitFor()
 
             new File("." ).eachFile{ file ->
                 if(file =~ /seq_*/){
@@ -40,7 +38,12 @@ class PiperTasks {
     }
 
     static void blastRun( String blastStrategy, File blastDatabase, File queryFile, File blastResult  ) {
+        def process = "./bin/x-blast.sh $blastStrategy $blastDatabase $queryFile".execute()
 
+        def ln = System.getProperty('line.separator')
+        process.text.eachLine { line ->
+            blastResult.append("$line$ln")
+        }
     }
 
     static void exonerateRun( File queryFile, File mf2File, File chrDatabasePath, List<File> exonerateOut, List<File> exonerateGtf  ) {

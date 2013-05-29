@@ -9,7 +9,7 @@ package compss.piper
  */
 class PiperMain {
 
-   static File targetFolder = new File("/users/cn/bsanjuan/Software/compss-sandbox/src/compss/db") //= new File("/users/cn/bsanjuan/Software/db").mkdir()      // Directorio para nuestra base de datos
+   static File targetFolder = new File("/users/cn/bsanjuan/Software/compss-sandbox/src/compss/db")     // Directorio para nuestra base de datos
 
 
 
@@ -20,42 +20,43 @@ class PiperMain {
         String blastStrategy = 'ncbi-blast' //args[2]            // Estrategia a seguir por blast
 
         if(!targetFolder.exists()){
-            targetFolder.mkdir()
+            if(!targetFolder.mkdirs())
+                exit 1, "Cannot create genomes-db path: $targetFolder -- check file system permissions"
         }
 
         // List<File> allGenomes = null // .. to do           // Lista de todos los genomas a usar en la busqueda
         Map allGenomes = parseGenomesFolder(genomeFileStr,blastStrategy)
 
+
         /*
          * create BLAST DB
          */
-
         allGenomes.each { name, entry ->
-            println("Name: $name , Fasta: $entry")
-
             File genome_folder = new File("$targetFolder.absoluteFile/$name")
-            if (!genome_folder.exists()){
+            if (!genome_folder.exists())
                 genome_folder.mkdir()
-            }
 
-            PiperTasks.createBlastDatabase(blastStrategy, entry, genome_folder)
-            PiperTasks.createChrDatabase(entry,genome_folder)
+            PiperTasks.createBlastDatabase(blastStrategy, entry['genome_fa'], entry['blast_db'])
         }
 
 
         /*
          * Create Chromosome DB
          */
-  /*      allGenomes.each {
-            // Mando => it: fichero fasta del genoma  ;  targetFolder: directorio en donde estan los genomas
-            PiperTasks.createChrDatabase(it,targetFolder)
+        allGenomes.each { name, entry ->
+            PiperTasks.createChrDatabase(entry['genome_fa'],entry['chr_db'])
+        }
 
-        }   */
 
         /*
          * Blast stage
          */
+         allGenomes.each { name, entry ->
+            File blastFile = new File("$targetFolder/$name/resultado")
+            File queryFile = new File(queryFileStr)
 
+            PiperTasks.blastRun(blastStrategy,entry['blast_db'],queryFile,blastFile)
+         }
 
         /*
          * Exonerate stage ..
@@ -64,23 +65,23 @@ class PiperMain {
     }
 
      static Map parseGenomesFolder(String genomeFile, String blast){
-        def result = [:]
+         def result = [:]
 
          def genomes = new File(genomeFile)
          if(!genomes.exists())
-               println("No existe esto")
+               exit 2, "Error: no existe una carpeta con genomas"
 
          genomes.eachDir { File path ->
             def fasta = path.listFiles().find { File file -> file.name.endsWith('.fa')}
             if(fasta){
-                result[path.name] = fasta
-            //    new File("targetFolder.absoluteFile/$path.name/chr")
-            //    new File("targetFolder.absoluteFile/$path.name/$blast-db")
+                result[path.name] = [
+                        genome_fa: fasta,
+                        chr_db: new File("$targetFolder/$path.name/chr"),
+                        blast_db: new File("$targetFolder/$path.name/$blast-db")
+                ]
             }
-
-        }
-        return result
-
-    }
+         }
+         return result
+     }
 
 }
