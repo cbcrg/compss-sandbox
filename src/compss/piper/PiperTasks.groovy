@@ -9,46 +9,115 @@ package compss.piper
  */
 class PiperTasks {
 
+    static String split = (System.properties['os.name'] == 'Mac OS X' ? 'gcsplit' : 'csplit')
+
+
     static void createBlastDatabase( String strategy, File genomeFile, File db_folder ) {
 
-        if(!db_folder.exists()){
-            db_folder.mkdir()
-            "./bin/x-format.sh $strategy $genomeFile $db_folder".execute().waitFor()
-        }
+        def command =
+            """
+            if [[ ! `ls -A ${db_folder} 2>/dev/null` ]]; then
+
+            ## Create the target folder
+            mkdir -p ${db_folder}
+
+            ## Format the BLAST DB
+            ./bin/x-format.sh ${strategy} ${genomeFile} ${db_folder}
+            fi
+            """
+
+        Process proc = new ProcessBuilder("bash","-c",command).start()
+        int exitCode = proc.waitFor()
+        exceptionCatcher(exitCode,command,proc)
     }
 
 
     static void createChrDatabase( File genomeFile, File chr_folder ) {
-        def split = (System.properties['os.name'] == 'Mac OS X' ? 'gcsplit' : 'csplit')
 
-        if(!chr_folder.exists()){
-            chr_folder.mkdir()
-            "$split $genomeFile %^>%  /^>/ {*} -f seq_ -n 5".execute().waitFor()
+        def command =
+            """
+            if [[ ! `ls -A ${chr_folder} 2>/dev/null` ]]; then
 
-            new File("." ).eachFile{ file ->
-                if(file =~ /seq_*/){
-                    String line
-                    file.withReader { line = it.readLine().substring(1) }
-                    file.renameTo("./$line")
-                    "mv $line $chr_folder/$line".execute().waitFor()
-                }
-            }
-        }
+                ## split the fasta in a file for each sequence 'seq_*'
+                $split ${genomeFile} '%^>%' '/^>/' '{*}' -f seq_ -n 5
 
+                ## create the target folder
+                mkdir -p ${chr_folder}
+
+                ## rename and move to the target folder
+                for x in seq_*; do
+                    SEQID=`grep -E "^>" \$x | sed 's/^>\\(\\S*\\\\).*/\\1/'  | sed 's/[\\>\\<\\/\\''\\:\\\\]/_/'`
+                    mv \$x ${chr_folder}/\$SEQID;
+                done
+
+            fi
+            """
+
+        Process proc = new ProcessBuilder("bash","-c",command).start()
+        int exitCode = proc.waitFor()
+        exceptionCatcher(exitCode,command,proc)
     }
+
 
     static void blastRun( String blastStrategy, File blastDatabase, File queryFile, File blastResult  ) {
-        def process = "./bin/x-blast.sh $blastStrategy $blastDatabase $queryFile".execute()
 
-        def ln = System.getProperty('line.separator')
-        process.text.eachLine { line ->
-            blastResult.append("$line$ln")
-        }
+        def command = """./bin/x-blast.sh ${blastStrategy} ${blastDatabase} ${queryFile} > $blastResult"""
+
+        Process proc = new ProcessBuilder("bash","-c",command).start()
+        int exitCode = proc.waitFor()
+        exceptionCatcher(exitCode,command,proc)
     }
 
-    static void exonerateRun( File queryFile, File mf2File, File chrDatabasePath, List<File> exonerateOut, List<File> exonerateGtf  ) {
+
+    static void exonerateRun( File queryFile, File mf2File, File chr, String specie){
+
+        def command =
+            """
+            ## apply exonerate
+            ./bin/exonerateRemapping.pl -query ${queryFile} -mf2 $mf2File -targetGenomeFolder $chr -exonerate_lines_mode 1000 -exonerate_success_mode 1 -ner no
+            if [ ! -s blastResult.fa ]; then exit 0; fi
+
+            ## exonerateRemapping create a file named 'blastResult.fa'
+            ## split the exonerate result into single files
+            ${split} blastResult.fa '%^>%' '/^>/' '{*}' -f .seq_ -n 5
+            mv blastResult.fa .blastResult.fa
+
+            ## rename the seq_xxx files so that the file name match the seq fasta id
+            ## plus append the specie to th sequence id
+            for x in .seq_*; do
+              SEQID=`grep '>' \$x`
+              FILENAME=`grep '>' \$x | sed 's/^>\\(.*\\)_hit\\d*.*\$/\\1/'`
+              printf "\${SEQID}_${specie}\\n" >> \${FILENAME}.fa
+              cat \$x | grep -v '>' >> \${FILENAME}.fa
+            done
+
+            mv blastResult.ex.gtf ${specie}.ex.gtf
+            """
+
+        Process proc = new ProcessBuilder("bash","-c",command).start()
+        int exitCode = proc.waitFor()
+        exceptionCatcher(exitCode,command,proc)
+    }
 
 
+    static void exceptionCatcher(int exitCode, def command, Process proc){
+
+        if( exitCode ) {
+
+            String message =
+                """\
+                BLAST returned an invalid exit code: $exitCode
+
+                Command Line:
+                ${command}
+
+                Error message:
+                ${proc.err.text}
+                """.stripIndent().toString()
+
+            println(message)
+            throw new FailedCommandException(exitCode,message)
+        }
     }
 
 
