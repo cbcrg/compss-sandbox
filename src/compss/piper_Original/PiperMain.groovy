@@ -1,4 +1,4 @@
-package compss.piper
+package compss.piper_Original
 
 /**
  * Created with IntelliJ IDEA.
@@ -9,12 +9,12 @@ package compss.piper
  */
 class PiperMain {
 
-    static File targetFolder = new File("/users/cn/bsanjuan/Software/compss-sandbox/src/compss/db")             // Main directory for the databases
+    static File targetFolder = new File("/users/cn/bsanjuan/Software/compss-sandbox/src/compss/db") // Main directory for the databases
 
     static void main(String[] args) {
-        String queryFileStr = "/users/cn/bsanjuan/Software/compss-sandbox/src/compss/tutorial/5_RNA_queries.fa"  // args[0]: File with the queries
-        String genomeFileStr = '/users/cn/bsanjuan/Software/compss-sandbox/src/compss/tutorial/genomes'          // args[1]: Folder of the genomes
-        String blastStrategy = 'ncbi-blast'                                                                      // args[2]: Blast strategy
+        String queryFileStr = "/users/cn/bsanjuan/Software/compss-sandbox/src/compss/tutorial/5_RNA_queries.fa" // args[0]: File with the queries
+        String genomeFileStr = '/users/cn/bsanjuan/Software/compss-sandbox/src/compss/tutorial/genomes' // args[1]: Folder of the genomes
+        String blastStrategy = 'ncbi-blast' // args[2]: Blast strategy
 
 
         if(!targetFolder.exists()){
@@ -27,8 +27,8 @@ class PiperMain {
 
 
         /*
-         * Create BLAST DB
-         */
+        * Create BLAST DB
+        */
         allGenomes.each { name, entry ->
             File genome_folder = new File("$targetFolder.absoluteFile/$name")
             if (!genome_folder.exists())
@@ -39,29 +39,29 @@ class PiperMain {
 
 
         /*
-         * Create Chromosome DB
-         */
+        * Create Chromosome DB
+        */
         allGenomes.each { name, entry ->
             PiperTasks.createChrDatabase(entry['genome_fa'],entry['chr_db'])
         }
 
 
         /*
-         * Blast stage
-         */
-         allGenomes.each { name, entry ->
+        * Blast stage
+        */
+        allGenomes.each { name, entry ->
             File blastFile = new File("$targetFolder/$name/blastResult")
             File queryFile = new File(queryFileStr)
 
             PiperTasks.blastRun(blastStrategy,entry['blast_db'],queryFile,blastFile)
 
-         }
+        }
 
 
         /*
-         * Exonerate stage ..
-         *
-         */
+        * Exonerate stage ..
+        *
+        */
         allGenomes.each { name, entry ->
             File queryFile = new File(queryFileStr)
             File blastFile = new File("$targetFolder/$name/blastResult")
@@ -73,17 +73,17 @@ class PiperMain {
 
 
     /*
-     * Parse the genome folder
-     *
-     */
-     static Map parseGenomesFolder(String genomeFile, String blast){
-         def result = [:]
+    * Parse the genome folder
+    *
+    */
+    static Map parseGenomesFolder(String genomeFile, String blast){
+        def result = [:]
 
-         def genomes = new File(genomeFile)
-         if(!genomes.exists())
-               exit 2, "Cannot create genomes-db path: $genomeFile -- check file system permissions"
+        def genomes = new File(genomeFile)
+        if(!genomes.exists())
+            exit 2, "Cannot create genomes-db path: $genomeFile -- check file system permissions"
 
-         genomes.eachDir { File path ->
+        genomes.eachDir { File path ->
             def fasta = path.listFiles().find { File file -> file.name.endsWith('.fa')}
             if(fasta){
                 result[path.name] = [
@@ -92,9 +92,9 @@ class PiperMain {
                         blast_db: new File("$targetFolder/$path.name/$blast-db")
                 ]
             }
-         }
-         return result
-     }
+        }
+        return result
+    }
 
 
 }

@@ -1,4 +1,4 @@
-package compss.piper
+package compss.piper_Original
 
 /**
  * Created with IntelliJ IDEA.
@@ -38,17 +38,17 @@ class PiperTasks {
             """
             if [[ ! `ls -A ${chr_folder} 2>/dev/null` ]]; then
 
-                ## split the fasta in a file for each sequence 'seq_*'
-                $split ${genomeFile} '%^>%' '/^>/' '{*}' -f seq_ -n 5
+            ## split the fasta in a file for each sequence 'seq_*'
+            $split ${genomeFile} '%^>%' '/^>/' '{*}' -f seq_ -n 5
 
-                ## create the target folder
-                mkdir -p ${chr_folder}
+            ## create the target folder
+            mkdir -p ${chr_folder}
 
-                ## rename and move to the target folder
-                for x in seq_*; do
-                    SEQID=`grep -E "^>" \$x | sed 's/^>\\(\\S*\\\\).*/\\1/'  | sed 's/[\\>\\<\\/\\''\\:\\\\]/_/'`
-                    mv \$x ${chr_folder}/\$SEQID;
-                done
+            ## rename and move to the target folder
+            for x in seq_*; do
+            SEQID=`grep -E "^>" \$x | sed 's/^>\\(\\S*\\\\).*/\\1/' | sed 's/[\\>\\<\\/\\''\\:\\\\]/_/'`
+            mv \$x ${chr_folder}/\$SEQID;
+            done
 
             fi
             """
@@ -59,7 +59,7 @@ class PiperTasks {
     }
 
 
-    static void blastRun( String blastStrategy, File blastDatabase, File queryFile, File blastResult  ) {
+    static void blastRun( String blastStrategy, File blastDatabase, File queryFile, File blastResult ) {
 
         def command = """./bin/x-blast.sh ${blastStrategy} ${blastDatabase} ${queryFile} > $blastResult"""
 
@@ -85,10 +85,10 @@ class PiperTasks {
             ## rename the seq_xxx files so that the file name match the seq fasta id
             ## plus append the specie to th sequence id
             for x in .seq_*; do
-              SEQID=`grep '>' \$x`
-              FILENAME=`grep '>' \$x | sed 's/^>\\(.*\\)_hit\\d*.*\$/\\1/'`
-              printf "\${SEQID}_${specie}\\n" >> \${FILENAME}.fa
-              cat \$x | grep -v '>' >> \${FILENAME}.fa
+            SEQID=`grep '>' \$x`
+            FILENAME=`grep '>' \$x | sed 's/^>\\(.*\\)_hit\\d*.*\$/\\1/'`
+            printf "\${SEQID}_${specie}\\n" >> \${FILENAME}.fa
+            cat \$x | grep -v '>' >> \${FILENAME}.fa
             done
 
             mv blastResult.ex.gtf ${specie}.ex.gtf
