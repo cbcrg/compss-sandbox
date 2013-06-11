@@ -1,5 +1,7 @@
 package piper
 
+import util.FailedCommandException
+
 //import util.FailedCommandException
 
 
@@ -31,7 +33,7 @@ public class PiperImpl {
 
         Process proc = new ProcessBuilder("bash","-c",command).start()
         int exitCode = proc.waitFor()
-        //exceptionCatcher(exitCode,command,proc)
+        exceptionCatcher(exitCode,command,proc)
     }
 
 
@@ -57,7 +59,7 @@ public class PiperImpl {
 
         Process proc = new ProcessBuilder("bash","-c",command).start()
         int exitCode = proc.waitFor()
-        //exceptionCatcher(exitCode,command,proc)
+        exceptionCatcher(exitCode,command,proc)
     }
 
 
@@ -67,7 +69,7 @@ public class PiperImpl {
 
         Process proc = new ProcessBuilder("bash","-c",command).start()
         int exitCode = proc.waitFor()
-        //exceptionCatcher(exitCode,command,proc)
+        exceptionCatcher(exitCode,command,proc)
     }
 
 
@@ -104,11 +106,11 @@ public class PiperImpl {
 
         Process proc = new ProcessBuilder("bash","-c",command).start()
         int exitCode = proc.waitFor()
-       // exceptionCatcher(exitCode,command,proc)
+        exceptionCatcher(exitCode,command,proc)
     }
 
 
-    /*   public static void exceptionCatcher(int exitCode, def command, Process proc){
+    public static void exceptionCatcher(int exitCode, def command, Process proc){
 
        if( exitCode ) {
 
@@ -123,10 +125,9 @@ public class PiperImpl {
                ${proc.err.text}
                """.stripIndent().toString()
 
-           println(message)
-          // throw new FailedCommandException(exitCode,message)
+          throw new FailedCommandException(exitCode,message)
        }
-   }    */
+   }
 
 
 }

@@ -8,7 +8,7 @@ import util.FailedCommandException
  */
 class BlastImpl {
 
-    def static String BLAST = '/Users/ptommaso/tools/ncbi-blast-2.2.27+/bin/blastp'
+    def static String BLAST = '/Users/pditommaso/tools/ncbi-blast-2.2.27+/bin/blastp'
 
 
     public static void run(File db, File query, File result) {

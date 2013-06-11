@@ -1,11 +1,7 @@
 package piper
 
-import integratedtoolkit.types.annotations.Constraints
 import integratedtoolkit.types.annotations.Method
 import integratedtoolkit.types.annotations.Parameter
-import integratedtoolkit.types.annotations.Parameter.Direction;
-import integratedtoolkit.types.annotations.Parameter.Type;
-
 /**
  * Created with IntelliJ IDEA.
  * User: bsanjuan
@@ -68,16 +64,6 @@ public interface PiperItf {
             String specie
     );
 
-  /*  @Method(declaringClass = "piper.PiperImpl")
-    void exceptionCatcher(
-            @Parameter(type = Parameter.Type.INT, direction = Parameter.Direction.IN)
-            Integer exitCode,
 
-            @Parameter(type = Parameter.Type.OBJECT, direction = Parameter.Direction.IN)
-            def command,
-
-            @Parameter(type = Parameter.Type.OBJECT, direction = Parameter.Direction.IN)
-            Process proc
-    );             */
 
 }
